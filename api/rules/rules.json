@@ -1,0 +1,77 @@
+{
+  "username_length": {
+    "operator": "GREATER_THAN",
+    "operands": [
+      {
+        "operator": "LENGTH",
+        "operands": [
+          {
+            "field": "username"
+          }
+        ]
+      },
+      {
+        "value": "4"
+      }
+    ]
+  },
+  "password_length": {
+    "operator": "OR",
+    "operands": [
+      {
+        "operator": "EQUAL_TO",
+        "operands": [
+          {
+            "operator": "LENGTH",
+            "operands": [
+              {
+                "field": "password"
+              }
+            ]
+          },
+          {
+            "value": "0"
+          }
+        ]
+      },
+      {
+        "operator": "GREATER_THAN",
+        "operands": [
+          {
+            "operator": "LENGTH",
+            "operands": [
+              {
+                "field": "password"
+              }
+            ]
+          },
+          {
+            "value": "6"
+          }
+        ]
+      }
+    ]
+  },
+  "phone_pattern": {
+    "operator": "REGEX_MATCH",
+    "operands": [
+      {
+        "value": "[0-9]{3}-[0-9]{3}-[0-9]{4}"
+      },
+      {
+        "field": "phone"
+      }
+    ]
+  },
+  "zip_code_pattern" : {
+    "operator": "REGEX_MATCH",
+    "operands": [
+      {
+        "value": "[0-9]{5}"
+      },
+      {
+        "field": "address.zip_code"
+      }
+    ]
+  }
+}
