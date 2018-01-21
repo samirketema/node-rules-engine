@@ -5,7 +5,7 @@ var app = require('../app');
 describe('Client object validation tests:', function () {
   it('it allows valid input', function (done) {
     supertest(app)
-    .post('/validation')
+    .post('/api/validation')
     .send({
       "username": "bwillis",
       "password": "",
@@ -34,7 +34,7 @@ describe('Client object validation tests:', function () {
   });
   it('rejects failure of one rule', function (done) {
     supertest(app)
-    .post('/validation')
+    .post('/api/validation')
     .send({
       "username": "bwillis",
       "password": "q",
@@ -67,7 +67,7 @@ describe('Client object validation tests:', function () {
 
   it('rejects failure of all rules', function (done) {
     supertest(app)
-    .post('/validation')
+    .post('/api/validation')
     .send({
       "username": "",
       "password": "a",
@@ -119,7 +119,7 @@ describe('Client object validation tests:', function () {
 
   it('rejects request with no body', function (done) {
     supertest(app)
-    .post('/validation')
+    .post('/api/validation')
     .expect(400)
     .end(function(err, res) {
         if (err) {
