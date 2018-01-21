@@ -1,0 +1,89 @@
+{
+  "username_length": {
+    "name": "username_length",
+    "rule": {
+      "operator": "GREATER_THAN",
+      "operands": [
+        {
+          "operator": "LENGTH",
+          "operands": [
+            {
+              "field": "username"
+            }
+          ]
+        },
+        {
+          "value": "4"
+        }
+      ]
+    }
+  },
+  "password_length": {
+    "name": "password_length",
+    "rule": {
+      "operator": "OR",
+      "operands": [
+        {
+          "operator": "EQUAL_TO",
+          "operands": [
+            {
+              "operator": "LENGTH",
+              "operands": [
+                {
+                  "field": "password"
+                }
+              ]
+            },
+            {
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "operator": "GREATER_THAN",
+          "operands": [
+            {
+              "operator": "LENGTH",
+              "operands": [
+                {
+                  "field": "password"
+                }
+              ]
+            },
+            {
+              "value": "6"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "phone_pattern": {
+    "name": "phone_pattern",
+    "rule": {
+      "operator": "REGEX_MATCH",
+      "operands": [
+        {
+          "value": "^[0-9]{3}-[0-9]{3}-[0-9]{4}$"
+        },
+        {
+          "field": "phone"
+        }
+      ]
+    }
+  },
+  "zip_code_pattern": {
+    "name": "zip_code_pattern",
+    "rule": {
+      "operator": "REGEX_MATCH",
+      "operands": [
+        {
+          "value": "^[0-9]{5}$"
+        },
+        {
+          "field": "address.zip_code"
+        }
+      ]
+    }
+  }
+}
