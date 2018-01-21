@@ -169,8 +169,7 @@ forever npm start
 ## Scaling Considerations
 1. Adding slow rules (e.g., those that make external calls or interact with DB)
 
-  Node.js is a great environment for handling requests to databases and external APIs when using async calls with the event loop model.
-  * If we have many calls to external services, we can investigate usage of a circuit breaker such as [hystrix](https://www.npmjs.com/package/hystrixjs) to stop cascading failure.
+  * Node.js is a great environment for handling requests to databases and external APIs when using async calls with the event loop model. That being said, if we have many calls to external services, we can investigate usage of a circuit breaker such as [hystrix](https://www.npmjs.com/package/hystrixjs) to stop cascading failure.
   * On that note, adding promises to this service would make the code more maintainable as these external calls scale.
   * If a rule is complex, enlisting the help of a database may be helpful. This service could take validation requests and compare against normalized rules or utilize constraints from a relational database.
 
