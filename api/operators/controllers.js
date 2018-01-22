@@ -9,7 +9,7 @@ let operators = {
     Returns the length of a string or collection (object/array)
   */
   LENGTH: {
-    name: 'LENGTH',
+    name: 'LENGTHc',
     numParameters: 1,
     apply: function (valueArr) {
       return lodash.size(valueArr[0]);
@@ -88,7 +88,7 @@ let operators = {
   }
 };
 
-const FIVE_MINS_IN_MS = 1000;
+const FIVE_MINS_IN_MS = 300000;
 
 function loadExternalOperators() {
   let externalOperators = ExternalOperators.retrieveExternalOperators();
