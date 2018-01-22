@@ -10,5 +10,6 @@ var Operator = require('../api/operators/controllers');
 router.post('/api/validation', Validation.postValidation);
 router.get('/api/rules', Rule.getRules);
 router.get('/api/rules/:name', Rule.getRule);
+router.get('/api/operators', Operator.getOperators);
 
 module.exports = router;
