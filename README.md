@@ -44,7 +44,7 @@ Example `Operand` structure:
 
 ## Service Overview
 
-Currently, there is only one endpoint - `POST /api/validation` which performs validation upon the request body. Ex:
+POST /api/validation
 
 Valid request: 
 ```js
@@ -103,6 +103,14 @@ Corresponding response:
     "zip_code_pattern"
   ]
 }
+```
+
+
+Other notable API Endpoints:
+```
+GET /api/rules
+GET /api/rules/:name
+GET /api/operators
 ```
 
 ### Install & Run
@@ -171,7 +179,7 @@ forever npm start
 
   * Node.js is a great environment for handling requests to databases and external APIs when using async calls with the event loop model. That being said, if we have many calls to external services, we can investigate usage of a circuit breaker such as [hystrix](https://www.npmjs.com/package/hystrixjs) to stop cascading failure.
   * On that note, adding promises to this service would make the code more maintainable as these external calls scale.
-  * If a rule is complex, enlisting the help of a database may be helpful. This service could take validation requests and compare against normalized rules or utilize constraints from a relational database.
+  * If a rule is complex, enlisting the help of a database may be helpful. This service could take validation requests and compare against normalized rules or utilize constraints from a relational database. If the rule structure is rapidly changing and does not require any normalization, then a database like MongoDB would be storing rules (not for validating data integrity for things like transactions though).
 
 2. Scaling the number of rules
   * On the other hand, given that Node.js is single-threaded, parallelism is not straightforward (although concurrency is). This service could be implemented to spawn child processes for various rules. However, applying thousands of rules to one JSON object would bode better in an environment like Golang or even Java for goroutines and multithreading respectively. The service could break down the JSON object and apply various rules in parallel to the different portions of the input JSON.
