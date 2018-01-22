@@ -103,7 +103,7 @@ describe('Client object validation tests:', function () {
 
   it('rejects empty obj', function (done) {
     supertest(app)
-    .post('/validation')
+    .post('/api/validation')
     .send({})
     .expect(400)
     .end(function(err, res) {

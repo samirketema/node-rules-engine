@@ -32,7 +32,7 @@ exports.postValidation = function (req, res) {
     //There was an issue applying the input against the rules.
     return res.status(400).json({
       'result': 'failure',
-      'message': 'Rules/Operators cannot be applied to input. ' + e
+      'message': 'Validation error: ' + e
     });
   }
 };
