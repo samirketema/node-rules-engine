@@ -10,10 +10,25 @@ var Operator = require('../operators/controllers');
 let rulesRegistry = require('./rules.json');
 
 /* 
+  Stack that keeps track of operators & operands through validation
+*/
+let operandStack = [];
+
+/*
+  Stack that keeps track of values only through validation 
+*/
+let valueStack = [];
+
+/* 
   Return rules kept in the rules registry.
 */
 function retrieveRules () {
   return rulesRegistry;
+}
+
+
+function retrieveRule (name) {
+  return rulesRegistry[name];
 }
 
 /* 
@@ -24,6 +39,28 @@ exports.getRules = function (req, res) {
   return res.status(200).json(retrieveRules());
 };
 
+/*
+  GET /rule/name/:name
+  Return a rule with the key 'name' if it exists.
+*/
+exports.getRule = function (req, res) {
+  //If the request doesn't have the name param, send 400
+  if (!req.params.name) {
+    return res.status(400).json({
+      'message': 'No name provided in request parameters.'
+    });
+  }
+  //Check if the rule was found
+  let rule = retrieveRule(req.params.name);
+  //If found, return the rule.
+  if (rule) {
+    return res.status(200).json(rule);
+  }
+  //Otherwise, return a 404 since the resource was not found
+  return res.status(404).json({
+    'message': 'Rule \'' + req.params.name + '\' not found in rules registry.'
+  });
+};
 
 /* 
   POST /rules
@@ -31,9 +68,25 @@ exports.getRules = function (req, res) {
   overwrite that rule.
   Req: JSON representing a new rule to add to the rules registry
 */
-exports.addRule = function (req, res) {
-  res.status(400);
-};
+// exports.addRule = function (req, res) {
+//   if (!req.body) {
+//     return res.status(400).json({
+//       'message': 'No body provided in request.'
+//     });
+//   }
+//   let rule = req.body;
+
+//   //Validate top level of rule structure
+//   if (_.isString(rule.name) || _.isObject(rule.rule)) {
+//     return res.status(400).json({
+//       'message': 'rule structure invalid'
+//     });
+//   }
+
+//   //Add the rule
+
+//   //Still in progress!
+// };
 
 /*
   DELETE /rule
@@ -55,40 +108,81 @@ function isRule(obj) {
 /*
   Evaluates an operand. A operand is a token that is either a rule, value, or field.
   Input: Operand
-  Output: 
-  For the different types, this function returns different values:
-  - Rule
-    returns result of applying operator against internal operands
-  - Value
-    returns literal value from JSON
-  - Field
-    returns field from userInput
-  - None of the above
-    returns false to stop processing of this operand.
+  Output: Boolean value
+
+  This utilizes two stacks, one to keep operands as they are evaluated (similar to polish notation),
+  and another to keep values which are determined from operands. This iterative approach uses less 
+  memory for deeply nested rules as it will not add more frames to the call stack when evaluating
+  different levels of rules.
 */
-exports.evaluateOperand = function (operand, userInput) {
-  if (isRule(operand)) {
-    try {
-      return Operator.retrieveOperators()[operand.operator](operand, userInput);
-    } catch (e) {
-      throw e;
+function evaluateRuleIterative (rule, userInput) {
+  let operators = Operator.retrieveOperators();
+  operandStack.push(rule);
+  
+  //Keep evaluating operands while we have them.
+  while (!_.isEmpty(operandStack)) {
+    //Get the current operand
+    let currElement = operandStack.pop();
+
+    //If the current operand is a rule, then push the operator and each of the operands onto the stack.
+    if (currElement.hasOwnProperty('operator') && currElement.hasOwnProperty('operands')) {
+      operandStack.push({
+        operator: currElement.operator,
+        size: currElement.operands.length
+      });
+      currElement.operands.forEach(function (o) {
+        operandStack.push(o);
+      });
+
+    //If the current operand is a value, push the value to the value stack.
+    } else if (currElement.hasOwnProperty('value')) {
+      if (!_.isString(currElement.value)) {
+        throw new Error ('Rule Structure invalid: value is not a string. value=' + currElement.value);
+      }
+      valueStack.push(currElement.value);
+
+    //If the current operand is a field, push the field to the value stack if found.
+    } else if (currElement.hasOwnProperty('field')) {
+      let field = lodash.get(userInput, currElement.field, false);
+      if (field === false) {
+        throw new Error('Field ' + currElement.field + ' not found in user input JSON');
+      }
+      valueStack.push(field);
+
+    //If the current operand is an operator, evaluate the operator against values in the value stack.
+    } else if (currElement.hasOwnProperty('operator')) {
+      if (valueStack.length < currElement.size) {
+        throw new Error('Rule structure invalid: not enough values for operator ' + currElement.operator);
+      }
+      let numParameters = operators[currElement.operator].numParameters;
+
+      // -1 denotes a flexible amount of parameters for the operator (e.g. OR)
+      if (numParameters !== -1 && numParameters !== currElement.size) {
+        throw new Error('Rule structure invalid: number of params !== number of. values=' + currElement.size + ', ' + currElement.operator +'=' + numParameters);
+      }
+      //Pop the desired number of values from value stack.
+      let values = [];
+      for (let i = 0; i < currElement.size; i++) {
+        values.push(valueStack.pop());
+      }
+      //push the result
+      valueStack.push(operators[currElement.operator].apply(values));
+    } else {
+      throw new Error('Rule structure invalid: incorrect operand structure');
     }
   }
 
-  //return value
-  if (operand.hasOwnProperty('value')) {
-    return operand.value;
+  //When the operand stack is empty, there should just be a single boolean value of whether or not the rule passed:
+  if (valueStack.length !== 1) {
+    throw new Error('Rule structure invalid: did not reduce down to single boolean value.')
   }
 
-  //return field
-  if (operand.hasOwnProperty('field')) {
-    let field = lodash.get(userInput, operand.field, false);
-    if (field === false) {
-      throw new Error('field ' + operand.field + ' not found in input');
-    }
-    return lodash.get(userInput, operand.field, false);
+  let result = valueStack.pop();
+  if (!_.isBoolean(result)) {
+    throw new Error ('Rule validation error: Final value not a boolean. value=' + value);
   }
-  throw new Error('invalid operand structure');
+  
+  return result;
 }
 
 /*
@@ -107,8 +201,10 @@ exports.applyRules = function (userInput) {
   let rules = retrieveRules();
   try {
     _.each(rules, function (rule) {
-      let result = exports.evaluateOperand(rule.rule, userInput);
-      if (typeof result !== 'boolean' || !result) {
+      operandStack = [];
+      valueStack = [];
+      let result = evaluateRuleIterative(rule.rule, userInput);
+      if (!_.isBoolean(result) || !result) {
         failures.push(rule.name);
       }
     });

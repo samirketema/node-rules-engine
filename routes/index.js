@@ -8,5 +8,8 @@ var Operator = require('../api/operators/controllers');
 
 /* Make controller mapping from resource path to functions */
 router.post('/api/validation', Validation.postValidation);
+router.get('/api/rules', Rule.getRules);
+router.get('/api/rules/:name', Rule.getRule);
+router.post('/api/rules', Rule.addRule);
 
 module.exports = router;

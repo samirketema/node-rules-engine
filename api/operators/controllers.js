@@ -1,89 +1,83 @@
 var handleRouteError = require('../utils').handleRouteError;
-var underscore = require('underscore');
+var _ = require('underscore');
 var lodash = require('lodash');
-var Rule = require('../rules/controllers');
 
 //Operators is private to this module.
 let operators = {
   /* 
     Returns the length of a string or collection (object/array)
   */
-  LENGTH: function (rule, userInput) {
-    if (rule.operands.length !== 1) {
-      throw new Error('LENGTH requires 1 operand, number of operands: ' + rule.operands.length);
+  LENGTH: {
+    numParameters: 1,
+    apply: function (valueArr) {
+      return lodash.size(valueArr[0]);
     }
-    let field = Rule.evaluateOperand(rule.operands[0], userInput);
-    return lodash.size(field);
   },
   /* 
     Returns the result of applying an input regular expression against the input.
   */
-  REGEX_MATCH: function (rule, userInput) {
-    if (rule.operands.length !== 2) {
-      throw new Error('REGEX_MATCH requires 2 operands, number of operands: ' + rule.operands.length);
+  REGEX_MATCH: {
+    numParameters: 2,
+    apply: function (valueArr) {
+      return new RegExp(valueArr[0]).test(valueArr[1]);
     }
-    let expression = Rule.evaluateOperand(rule.operands[0], userInput);
-    let field = Rule.evaluateOperand(rule.operands[1], userInput);
-    return new RegExp(expression).test(field);
   },
   /* 
     Performs an equality check between two items. 
     If the first parameter is a string or number, the second parameter will be converted as such. 
     As a fallback, it performs a strict equality (===)
   */
-  EQUAL_TO: function (rule, userInput) {
-    if (rule.operands.length !== 2) {
-      throw new Error('EQUAL_TO requires 2 operands, number of operands: ' + rule.operands.length);
+  EQUAL_TO: {
+    numParameters: 2,
+    apply: function (valueArr) {
+      let left = valueArr[0];
+      let right = valueArr[1];
+      if (_.isString(left)) {
+        right = String(right);
+      } else if (_.isNumber(left)) {
+        right = Number(right);
+      }
+      return left === right;
     }
-    let left = Rule.evaluateOperand(rule.operands[0], userInput);
-    let right = Rule.evaluateOperand(rule.operands[1], userInput);
-    if (typeof left === 'string') {
-      right = String(right);
-    } else if (typeof left === 'number') {
-      right = Number(right);
-    }
-    return left === right;
   },
   /*
     Performs a greater than check between two numbers.
   */
-  GREATER_THAN: function (rule, userInput) {
-    if (rule.operands.length !== 2) {
-      throw new Error('GREATER_THAN requires 2 operands, number of operands: ' + rule.operands.length);
+  GREATER_THAN: {
+    numParameters: 2,
+    apply: function (valueArr) {
+      return Number(valueArr[0]) > Number(valueArr[1]);
     }
-    let leftResult = Number(Rule.evaluateOperand(rule.operands[0], userInput));
-    let rightResult = Number(Rule.evaluateOperand(rule.operands[1], userInput));
-    return leftResult > rightResult;   
   },
   /*
     Performs a logical OR amongst items in an array.
     Does not semantically continue evaluation once true is found.
   */
-  OR: function (rule, userInput) {
-    if (rule.operands.length === 0) {
-      throw new Error('OR requires at least 1 operand');
-    }
-    for (let i = 0; i < rule.operands.length; i++) {
-      if (Rule.evaluateOperand(rule.operands[i], userInput)) {
-        return true;
+  OR: {
+    numParameters: -1,
+    apply: function (valueArr) {
+      for (let i = 0; i < valueArr.length; i++) {
+        if (_.isBoolean(valueArr[i]) && valueArr[i]) {
+          return true;
+        }
       }
+      return false;
     }
-    return false;
   },
   /*
     Performs a logical AND amongst items in an array.
     Does not senamtically continue evaluation once false is found.
   */
-  AND: function (rule, userInput) {
-    if (rule.operands.length === 0) {
-      throw new Error('AND requires at least 1 operand');
-    }
-    for (let i = 0; i < rule.operands.length; i++) {
-      if (!Rule.evaluateOperand(rule.operands[i], userInput)) {
-        return false;
+  AND: {
+    numParameters: -1,
+    apply: function (valueArr) {
+      for (let i = 0; i < valueArr.length; i++) {
+        if (_.isBoolean(valueArr[i]) && !valueArr[i]) {
+          return false;
+        }
       }
+      return true;
     }
-    return true;
   }
 };
 
